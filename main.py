@@ -64,7 +64,7 @@ def cmd_pending(m):
     for uid,data in pending_approval.items(): msg+=f"{uid} - {data['vpn']} - {data['txn']}\n/give {uid} {data['vpn']}\n\n"
     bot.send_message(m.chat.id, msg[:4000])
 
-@bot.message_handler(commands=['give','approve','reject','block',])
+@bot.message_handler(commands=['give','approve','reject','block'])
 def cmd_admin(m):
     if m.from_user.id != ADMIN_ID:
         bot.send_message(m.chat.id, "❌ Admin only - /buy to order VPN $2"); return
