@@ -46,7 +46,6 @@ def confirm_payment(text):
     txn_id=app_m.group(1)
     if hash_txn(txn_id) in used_txns:
         return False, f"ALREADY USED {txn_id}", None, None, None
-    # Date from CI260915
     txn_date_str=datetime.now().strftime('%d/%m/%Y')
     dm=re.search(r'CI(\d{2})(\d{2})(\d{2})', upper)
     if dm:
@@ -66,18 +65,18 @@ def send_file(uid, vtype, txn_id, txn_date, amount, username=""):
         if vtype=="FAMILY":
             for f in files:
                 with open(f"configs/{f}",'rb') as doc:
-                    bot.send_document(uid, doc, caption=f"✅ Family Pack $2\nTxn:{txn_id}\nDate:{txn_date}\nUSD {amount}\nID:{uid}")
+                    bot.send_document(uid, doc, caption=f"✅ Family Pack $2\nTxn:{txn_id}\nDate:{txn_date}")
         else:
             if files:
                 with open(f"configs/{files[0]}",'rb') as doc:
-                    bot.send_document(uid, doc, caption=f"✅ {vtype} $2\nTxn:{txn_id}\nDate:{txn_date}\nUSD {amount}\nID:{uid}")
+                    bot.send_document(uid, doc, caption=f"✅ {vtype} $2\nTxn:{txn_id}\nDate:{txn_date}")
 
         bot.send_message(uid, f"💚 USD {amount} CONFIRMED!\nTxn:{txn_id}\nDate:{txn_date}\nFile sent!")
         pending.pop(uid,None)
         transactions_log.append({"user":uid,"username":username,"app":vtype,"txn_id":txn_id,"txn_date":txn_date,"amount":amount,"confirm":datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
         save_backup()
 
-        # 🔔 NOTIFY YOU
+        # 🔔 ONLY YOU SEE ID - Customer never sees!
         bot.send_message(ADMIN_ID, f"🔔 NEW SALE $2!\n\n💰 USD {amount}\n📱 App: {vtype}\n👤 User: {uid} @{username}\n🧾 Txn: {txn_id}\n📅 Date: {txn_date}\n⏰ Now: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n💳 To: 0775713879\n✅ FILE SENT & BACKED UP\n📊 Total: {len(transactions_log)}")
 
         if len(transactions_log)%5==0:
@@ -88,7 +87,7 @@ def send_file(uid, vtype, txn_id, txn_date, amount, username=""):
         bot.send_message(ADMIN_ID, f"Error {e}")
 
 @app.route('/')
-def home(): return f"LIVE $2 Bot - {len(transactions_log)} sales - Notify ON"
+def home(): return f"LIVE $2 Bot - {len(transactions_log)} sales - ID HIDDEN - Notify ON"
 
 @bot.message_handler(commands=['start'])
 def start(m):
@@ -110,7 +109,8 @@ def start(m):
 def cb(c):
     if c.data.startswith("buy_"):
         pending[c.from_user.id]=c.data.replace("buy_","")
-        bot.send_message(c.message.chat.id, f"💰 {c.data.replace('buy_','')} - $2\nPay 0775713879 EcoCash\nForward:\nCashin Confirmation: USD 2.00 received...\nApproval Code: CI...\nMust be TODAY {datetime.now().strftime('%d/%m/%Y')}\nID:{c.from_user.id}")
+        # NO ID SHOWN TO CUSTOMER!
+        bot.send_message(c.message.chat.id, f"💰 {c.data.replace('buy_','')} - $2\nPay 0775713879 EcoCash\nForward:\nCashin Confirmation: USD 2.00 received...\nApproval Code: CI...\nMust be TODAY {datetime.now().strftime('%d/%m/%Y')}")
     if c.data.startswith("approve_"):
         if c.from_user.id!=ADMIN_ID: return
         _,uid,vtype=c.data.split("_",2)
