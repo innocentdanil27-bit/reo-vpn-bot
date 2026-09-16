@@ -1,10 +1,11 @@
+
 import os
 from flask import Flask
 import threading
 app = Flask(__name__)
 @app.route('/')
-def home(): return "REO VPN BOT IS ALIVE!"
-def run_web(): app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+def home(): return "REO VPN BOT IS ALIVE - Danil"
+def run_web(): app.run(host="0.0.0.0", port=10000)
 threading.Thread(target=run_web, daemon=True).start()
 
 import telebot
@@ -13,64 +14,93 @@ from telebot import types
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 ADMIN_ID = 8579468852
 ECOCASH = "0775713879"
+ECOCASH_NAME = "Danil"
 
 VPN_PRODUCTS = {
-    "hatunnel": {"name": "HA Tunnel Plus", "price": "2", "app": "HA Tunnel Plus", "desc": "30 Days Unlimited"},
-    "httpcustom": {"name": "HTTP Custom", "price": "2", "app": "HTTP Custom", "desc": "30 Days Secure"},
-    "injector": {"name": "HTTP Injector", "price": "2", "app": "HTTP Injector", "desc": "30 Days Premium"},
-    "napsternet": {"name": "NapsternetV", "price": "2", "app": "NapsternetV", "desc": "30 Days V2Ray"},
-    "stark": {"name": "Stark VPN", "price": "2.5", "app": "Stark VPN", "desc": "30 Days Premium"},
-    "family": {"name": "Family Pack", "price": "5", "app": "Any App", "desc": "3 Devices"}
+    "hatunnel": {"name": "HA Tunnel Plus", "price": "$2", "file": ".hat"},
+    "httpcustom": {"name": "HTTP Custom", "price": "$2", "file": ".hc"},
+    "injector": {"name": "HTTP Injector", "price": "$2", "file": ".ehi"},
+    "napsternetv": {"name": "NapsternetV", "price": "$2", "file": ".nv"},
+    "stark": {"name": "Stark VPN", "price": "$2.5", "file": ".sks"},
+    "dark": {"name": "Dark Tunnel", "price": "$2", "file": ".dt"},
+    "tls": {"name": "TLS Tunnel", "price": "$2", "file": ".tls"},
+    "sockstunnel": {"name": "SocksIP Tunnel", "price": "$2", "file": ".sip"},
+    "netmod": {"name": "NetMod / SocksHttp", "price": "$2", "file": ".nmd"},
+    "family": {"name": "Family Pack (All Apps)", "price": "$5", "file": "All Files"}
 }
 
-bot = telebot.TeleBot(BOT_TOKEN)
-print("REO VPN LEGIT BOT STARTED")
+WELCOME_TEXT = """🔥 REO LEGIT VPN STORE 🔥
+🇿🇼 Trusted in Zimbabwe since 2024
 
-def main_menu():
-    kb = types.InlineKeyboardMarkup(row_width=1)
-    for k,v in VPN_PRODUCTS.items():
-        kb.add(types.InlineKeyboardButton(f"{v['name']} - ${v['price']}", callback_data=f"buy_{k}"))
-    kb.add(types.InlineKeyboardButton("📖 How To Use", callback_data="how"), types.InlineKeyboardButton("💬 Support", callback_data="support"))
-    return kb
+✅ 30 Days Unlimited Data
+✅ Fast NetOne & ZOL & Econet
+✅ Instant Delivery After Payment
+✅ Support 24/7 - Quick Reply
+
+⭐ 500+ Happy Customers
+💬 Reviews: @ReoVpnReviews
+🛡️ Money Back Guarantee
+
+👇 SELECT YOUR VPN APP:"""
+
+def get_product_text(product):
+    p = VPN_PRODUCTS[product]
+    return f"""🛒 ORDER: {p['name']} - {p['price']}
+
+💰 PRICE: {p['price']} USD (ZiG / EcoCash USD)
+📱 EcoCash: {ECOCASH}
+👤 Name: {ECOCASH_NAME}
+
+📌 HOW TO PAY:
+1. Send {p['price']} to {ECOCASH}
+2. Click "I Paid" below
+3. Wait 2-5 mins for verification
+4. Receive your {p['file']} file instantly!
+
+🛡️ 100% Money Back if not working
+⚡ Unlimited for 30 Days
+📶 Works Best On: NetOne, ZOL, Econet"""
+
+bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
-def start(m):
-    txt = "🔥 *REO LEGIT VPN STORE* 🔥\n\n✅ Legit • 30 Days • Fast\n\n*SELECT APP:*"
-    bot.send_message(m.chat.id, txt, parse_mode="Markdown", reply_markup=main_menu())
-
-@bot.message_handler(commands=['myid'])
-def myid(m):
-    bot.send_message(m.chat.id, f"ID: {m.from_user.id}")
-
-@bot.message_handler(commands=['send'])
-def admin_send(m):
-    if m.from_user.id != ADMIN_ID: return
-    try:
-        _, uid, *rest = m.text.split()
-        txt = " ".join(rest)
-        bot.send_message(int(uid), f"🎉 *PAYMENT CONFIRMED!*\n\n{txt}", parse_mode="Markdown")
-        bot.send_message(m.chat.id, f"✅ Sent to {uid}")
-    except:
-        bot.send_message(m.chat.id, "Usage: /send USER_ID config")
+def start(msg):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton("HA Tunnel Plus - $2", callback_data="hatunnel"),
+        types.InlineKeyboardButton("HTTP Custom - $2", callback_data="httpcustom"),
+        types.InlineKeyboardButton("HTTP Injector - $2", callback_data="injector"),
+        types.InlineKeyboardButton("NapsternetV - $2", callback_data="napsternetv"),
+        types.InlineKeyboardButton("Stark VPN - $2.5", callback_data="stark"),
+        types.InlineKeyboardButton("Dark Tunnel - $2", callback_data="dark"),
+        types.InlineKeyboardButton("TLS Tunnel - $2", callback_data="tls"),
+        types.InlineKeyboardButton("SocksIP Tunnel - $2", callback_data="sockstunnel"),
+        types.InlineKeyboardButton("NetMod - $2", callback_data="netmod"),
+        types.InlineKeyboardButton("🔥 Family Pack - $5", callback_data="family")
+    )
+    markup.row(
+        types.InlineKeyboardButton("📖 How To Use", callback_data="howto"),
+        types.InlineKeyboardButton("💬 Support", callback_data="support")
+    )
+    bot.send_message(msg.chat.id, WELCOME_TEXT, reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda c: True)
-def cb(call):
-    d=call.data
-    if d.startswith("buy_"):
-        k=d.replace("buy_","")
-        p=VPN_PRODUCTS[k]
-        kb=types.InlineKeyboardMarkup()
-        kb.add(types.InlineKeyboardButton(f"✅ I Paid ${p['price']}", callback_data=f"paid_{k}"))
-        bot.send_message(call.message.chat.id, f"🛒 *{p['name']}* - ${p['price']}\nEcoCash: `{ECOCASH}`\nPay then click I Paid", parse_mode="Markdown", reply_markup=kb)
-    elif d.startswith("paid_"):
-        k=d.replace("paid_","")
-        p=VPN_PRODUCTS[k]
-        u=call.from_user
-        bot.send_message(ADMIN_ID, f"🔔 NEW ORDER {p['name']} ${p['price']}\nUser: {u.first_name} @{u.username} ID:{u.id}\n/send {u.id} config")
-        bot.send_message(call.message.chat.id, "✅ Noted! Admin will send config after verifying EcoCash.")
-    elif d=="how":
-        bot.send_message(call.message.chat.id, "1.Pay EcoCash 2.Click I Paid 3.Get config")
-    elif d=="support":
-        bot.send_message(call.message.chat.id, f"Support: EcoCash {ECOCASH}")
+def callback(call):
+    if call.data in VPN_PRODUCTS:
+        p = VPN_PRODUCTS[call.data]
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton(f"✅ I Paid {p['price']} - Verify Now", callback_data=f"paid_{call.data}"))
+        markup.add(types.InlineKeyboardButton("⬅️ Back", callback_data="back"))
+        bot.send_message(call.message.chat.id, get_product_text(call.data), reply_markup=markup)
+    elif call.data.startswith("paid_"):
+        prod = call.data.replace("paid_", "")
+        bot.send_message(call.message.chat.id, f"✅ PAYMENT REQUEST RECEIVED!\n\nApp: {VPN_PRODUCTS[prod]['name']}\n\n⏳ Admin ({ECOCASH_NAME}) is verifying your EcoCash payment to {ECOCASH}...\nYou will get config in 2-5 mins.")
+        bot.send_message(ADMIN_ID, f"🚨 NEW ORDER!\nUser: @{call.from_user.username} ({call.from_user.id})\nApp: {VPN_PRODUCTS[prod]['name']} - {VPN_PRODUCTS[prod]['price']}\nAction: /send {call.from_user.id}")
+    elif call.data == "howto":
+        bot.send_message(call.message.chat.id, "📚 HOW TO SETUP:\n1. Download app from Play Store\n2. You will receive config file\n3. Open App → Import → Select file\n4. Click START!\n\nWorks on: NetOne, ZOL, Econet")
+    elif call.data == "support":
+        bot.send_message(call.message.chat.id, f"💬 REO SUPPORT - 24/7\n\n📱 WhatsApp: {ECOCASH}\n👤 Name: {ECOCASH_NAME}\n⏰ Reply: 2-10 Mins\n🛡️ Guarantee: Works or Refund!")
+    elif call.data == "back":
+        start(call.message)
 
 bot.infinity_polling()
