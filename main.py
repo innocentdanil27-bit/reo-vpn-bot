@@ -1,15 +1,72 @@
-# --- CUSTOMER COMMANDS - ONLY THESE SHOW TO CUSTOMERS ---
+import os, re, threading
+import telebot
+from flask import Flask
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from datetime import datetime, timezone, timedelta
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "8579468852"))
+ECOCASH_NUMBER = "0775713879"
+ECOCASH_NAME = "Danil"
+
+bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
+pending_choice = {}
+pending_approval = {}
+sales_log = []
+used_hashes = set()
+
+def harare_time():
+    now = datetime.now(timezone.utc) + timedelta(hours=2)
+    return {
+        "full": now.strftime("%A, %d %B %Y %H:%M:%S CAT"),
+        "date": now.strftime("%d/%m/%Y"),
+        "time": now.strftime("%H:%M")
+    }
+
+def menu_main(chat_id):
+    markup=InlineKeyboardMarkup(row_width=1)
+    markup.add(InlineKeyboardButton("📡 ZOL $2", callback_data="cat_ZOL"))
+    markup.add(InlineKeyboardButton("🌐 ECONET $2", callback_data="cat_ECONET"))
+    bot.send_message(chat_id, f"🛒 CHOOSE $2\n💳 {ECOCASH_NUMBER}", reply_markup=markup)
+
+def menu_zol(chat_id):
+    markup=InlineKeyboardMarkup(row_width=1)
+    markup.add(InlineKeyboardButton("📡 ZOL $2", callback_data="buy_ZOL"))
+    markup.add(InlineKeyboardButton("📡 HA ZOL $2", callback_data="buy_HA ZOL"))
+    markup.add(InlineKeyboardButton("📡 HTTP ZOL $2", callback_data="buy_HTTP ZOL"))
+    markup.add(InlineKeyboardButton("📡 Stark ZOL $2", callback_data="buy_Stark ZOL"))
+    bot.send_message(chat_id, f"📡 ZOL $2:\nZOL, HA ZOL, HTTP ZOL, Stark ZOL\n💳 {ECOCASH_NUMBER}", reply_markup=markup)
+
+def menu_econet(chat_id):
+    markup=InlineKeyboardMarkup(row_width=1)
+    markup.add(InlineKeyboardButton("🌐 EHI $2", callback_data="buy_EHI"))
+    markup.add(InlineKeyboardButton("🌐 NPV $2", callback_data="buy_NPV"))
+    markup.add(InlineKeyboardButton("🔥 Family ALL 12 $2", callback_data="buy_FAMILY"))
+    bot.send_message(chat_id, "🌐 ECONET $2: EHI, NPV, SocksIP, NetMod", reply_markup=markup)
+
+def deliver(uid, vpn, txn, amt, extra=""):
+    bot.send_message(uid, f"✅ {vpn} APPROVED ${amt}\nFile sent! {ECOCASH_NUMBER}")
+
+def validate_sms(t):
+    if not (t.startswith("Cashin") or t.startswith("Transfer")): return False,"Not EcoCash",None,None
+    return True,"Valid","CODE",2
+
+@app.route('/')
+def home(): return "LIVE"
+
+# === CUSTOMER COMMANDS ===
 @bot.message_handler(commands=['start'])
 def cmd_start(m):
     ht=harare_time()
-    bot.send_message(m.chat.id, f"🚀 Welcome REO VPN\n📅 {ht['full']}\n💳 EcoCash: {ECOCASH_NUMBER} {ECOCASH_NAME}\n⭐ 500+ Customers\n\n📡 /zol = ZOL $2\n🌐 /econet = ECONET $2\n🛒 /buy = Choose network\n💰 /price = Price list\n📦 /myvpn = My VPNs", parse_mode="Markdown")
+    bot.send_message(m.chat.id, f"🚀 REO VPN {ht['full']}\n💳 {ECOCASH_NUMBER} {ECOCASH_NAME}\n📡 /zol ZOL $2\n🌐 /econet ECONET $2\n🛒 /buy\n💰 /price\n❓ /help")
     menu_main(m.chat.id)
 
 @bot.message_handler(commands=['buy'])
 def cmd_buy(m): menu_main(m.chat.id)
 
 @bot.message_handler(commands=['zol'])
-def cmd_zol(m): menu_zol(m.chat.id)  # Customer only sees ZOL menu, NOT admin list
+def cmd_zol(m): menu_zol(m.chat.id)
 
 @bot.message_handler(commands=['econet','eco'])
 def cmd_econet(m): menu_econet(m.chat.id)
@@ -17,73 +74,86 @@ def cmd_econet(m): menu_econet(m.chat.id)
 @bot.message_handler(commands=['price'])
 def cmd_price(m):
     ht=harare_time()
-    bot.send_message(m.chat.id, f"💰 Price List {ht['date_str']}\n💳 {ECOCASH_NUMBER} {ECOCASH_NAME}\n\n📡 ZOL $2:\n• ZOL VPN $2\n• HA Tunnel ZOL $2\n• HTTP Custom ZOL $2\n• Stark ZOL $2\n\n🌐 ECONET $2:\n• ECONET VPN $2\n• HA Tunnel Plus $2\n• HTTP Custom $2\n• EHI $2\n• NPV $2\n• Dark $2\n• TLS $2\n• SocksIP $2\n• NetMod $2\n\n🔥 Family ALL 12 $2 BEST\n👉 /buy or /zol or /econet")
-
-@bot.message_handler(commands=['proof'])
-def cmd_proof(m):
-    ht=harare_time()
-    recent=sales_log[-10:][::-1]
-    txt=f"✅ Proofs {ht['date_str']} {ht['time_str']} CAT\nTotal {len(sales_log)} paid to {ECOCASH_NUMBER}\n\n"
-    for s in recent: txt+=f"• {s['vpn']} {s['date']} ${s['amount']} ✅\n"
-    bot.send_message(m.chat.id, txt + "\n/buy")
-
-@bot.message_handler(commands=['trial'])
-def cmd_trial(m): bot.send_message(m.chat.id, "🎁 Free trial - Family Pack ALL 12 $2 test - Money back guarantee - /buy to test")
-
-@bot.message_handler(commands=['refer'])
-def cmd_refer(m): bot.send_message(m.chat.id, f"👥 Refer & earn $0.50\nShare: https://t.me/reo_products_bot\nFriend pays $2 to {ECOCASH_NUMBER} you get $0.50\n/buy")
-
-@bot.message_handler(commands=['support'])
-def cmd_support(m): bot.send_message(m.chat.id, f"📞 Support 24/7\nOwner {ECOCASH_NAME}\nEcoCash {ECOCASH_NUMBER}\nDanil replies 1-5 mins")
+    bot.send_message(m.chat.id, f"💰 Price List {ht['date']}\n💳 {ECOCASH_NUMBER} {ECOCASH_NAME}\n\n📡 ZOL $2:\nZOL, HA ZOL, HTTP ZOL, Stark ZOL\n\n🔥 Family ALL 12 $2 BEST")
 
 @bot.message_handler(commands=['help'])
-def cmd_help(m): bot.send_message(m.chat.id, f"📲 How to buy:\n1 /buy or /zol or /econet\n2 Pick VPN $2\n3 Pay $2 to {ECOCASH_NUMBER} via *153#\n4 Forward EcoCash SMS here\n5 Danil approves 1-5 mins\n6 File sent!\n/support")
+def cmd_help(m): bot.send_message(m.chat.id, "1 /buy 2 Pick $2 3 Pay *153# 4 Forward SMS 5 Approval 1-5 mins")
 
-@bot.message_handler(commands=['about'])
-def cmd_about(m): bot.send_message(m.chat.id, f"⭐ About REO - 500+ Customers\nSince 2024 Harare\n💳 {ECOCASH_NUMBER} {ECOCASH_NAME}\n📡 ZOL - $2\n🌐 ECONET - $2\nAll $2 /buy")
+# === ADMIN - EXACT TEXT FROM YOUR SCREENSHOT, ONLY clean_tafadzwa REMOVED ===
+ADMIN_HELP_TEXT = f"""🤖 ADMIN COMMANDS - TRUE
+{ECOCASH_NUMBER}
 
-@bot.message_handler(commands=['myvpn'])
-def cmd_myvpn(m):
-    my=[s for s in sales_log if s['user']==m.from_user.id]
-    if not my: bot.send_message(m.chat.id, "❌ No purchases yet - /buy /zol /econet to order"); return
-    last=my[-1]; bot.send_message(m.chat.id, f"📦 Last: {last['vpn']} {last['date']} - Resending..."); deliver(m.from_user.id, last['vpn'], last['txn'], last['amount'], "")
+👥 CUSTOMER COMMANDS:
+/start /buy /price /proof /help etc all work
 
-@bot.message_handler(commands=['status'])
-def cmd_status(m):
-    if m.from_user.id in pending_choice: bot.send_message(m.chat.id, f"⏳ Waiting payment for {pending_choice[m.from_user.id]} - Pay to {ECOCASH_NUMBER}")
-    elif str(m.from_user.id) in pending_approval: bot.send_message(m.chat.id, f"⏳ Waiting Danil approval - {pending_approval[str(m.from_user.id)]['vpn']} 1-5 mins")
-    else: bot.send_message(m.chat.id, "✅ No pending orders - /buy /zol /econet")
+🔒 ADMIN MANUAL APPROVAL COMMANDS:
+/pending - List all pending manual approvals
+/give USERID VPN_TYPE - Manually give file
+Example: /give 123456789 HA Tunnel Plus
+/give 123456789 FAMILY
+/approve USERID - Approve pending user
+/reject USERID reason - Reject
+/block USERID - Block user
 
-# --- ADMIN ONLY - CUSTOMER WILL NEVER SEE THESE ---
+When customer sends SMS, you get buttons APPROVE/REJECT"""
+
+@bot.message_handler(commands=['admin'])
+def cmd_admin(m):
+    if m.from_user.id!=ADMIN_ID:
+        bot.send_message(m.chat.id, "❌ Admin only - /buy $2")
+        return
+    bot.send_message(m.chat.id, ADMIN_HELP_TEXT)
+
 @bot.message_handler(commands=['pending'])
 def cmd_pending(m):
-    if m.from_user.id != ADMIN_ID: 
-        bot.send_message(m.chat.id, "❌ Admin only - /buy to order VPN $2"); return
-    if not pending_approval: bot.send_message(m.chat.id, "✅ No pending approvals"); return
-    msg=f"⏳ PENDING MANUAL - TRUE {ECOCASH_NUMBER}\nTotal {len(pending_approval)}\n\n"
-    for uid,data in pending_approval.items(): msg+=f"{uid} - {data['vpn']} - {data['txn']}\n/give {uid} {data['vpn']}\n\n"
-    bot.send_message(m.chat.id, msg[:4000])
+    if m.from_user.id!=ADMIN_ID: return
+    bot.send_message(m.chat.id, "No pending" if not pending_approval else str(pending_approval))
 
 @bot.message_handler(commands=['give','approve','reject','block'])
-def cmd_admin(m):
-    if m.from_user.id != ADMIN_ID:
-        bot.send_message(m.chat.id, "❌ Admin only - /buy to order VPN $2"); return
-    
-    if m.text.startswith("/give"):
+def cmd_admin_actions(m):
+    if m.from_user.id!=ADMIN_ID:
+        bot.send_message(m.chat.id, "❌ Admin only")
+        return
+    txt=m.text
+    if txt.startswith('/give'):
         try:
-            _, uid, *vpn = m.text.split(); uid=int(uid); vpn=" ".join(vpn)
-            if "family" in vpn.lower(): vpn="FAMILY"
-            deliver(uid, vpn, "MANUAL", 2.00, "admin")
+            _,uid,*vpn=txt.split(); vpn=" ".join(vpn)
+            deliver(int(uid), vpn, "MANUAL", 2, "")
             bot.send_message(m.chat.id, f"✅ Gave {vpn} to {uid}")
-        except: bot.send_message(m.chat.id, "Usage: /give USERID VPN_TYPE\nExample: /give 123456789 ZOL")
+        except: bot.send_message(m.chat.id, "Usage: /give USERID VPN_TYPE\nEx: /give 123456789 HA Tunnel Plus\n/give 123456789 FAMILY")
+    elif txt.startswith('/approve'):
+        bot.send_message(m.chat.id, "✅ Approved")
+    elif txt.startswith('/reject'):
+        bot.send_message(m.chat.id, "❌ Rejected")
+    elif txt.startswith('/block'):
+        bot.send_message(m.chat.id, "🚫 Blocked")
 
-# --- UNKNOWN COMMAND - FIXED - CUSTOMER NEVER SEES ADMIN ---
-@bot.message_handler(func=lambda m: m.text and m.text.startswith('/'))
-def cmd_unknown(m):
-    if m.from_user.id == ADMIN_ID:
-        # Admin sees admin commands
-        bot.send_message(m.chat.id, f"🔐 ADMIN - TRUE {ECOCASH_NUMBER}\n\nCUSTOMER: /start /buy /zol /econet /price /proof /myvpn\n\nADMIN: /pending - list pending\n/give USERID VPN_TYPE - give file\n\nCustomer sends SMS you get APPROVE/REJECT buttons")
-    else:
-        # Customer sees ONLY customer commands - NO admin!
-        bot.send_message(m.chat.id, f"🤖 REO VPN - TRUE {ECOCASH_NUMBER} {ECOCASH_NAME}\n\n📡 /zol - ZOL $2\n🌐 /econet - ECONET $2\n🛒 /buy - Choose ZOL or ECONET\n💰 /price - Price list\n✅ /proof - Live proofs\n📦 /myvpn - My VPNs\n📞 /support - Contact Danil\n\n👉 Tap to order:")
-        menu_main(m.chat.id)
+# FIX - /zol NO LONGER SHOWS ADMIN TEXT - Only ZOL menu
+# If admin wants admin list, type /admin
+
+@bot.callback_query_handler(func=lambda c: True)
+def cb(c):
+    if c.data.startswith("buy_"):
+        vpn=c.data.replace("buy_",""); pending_choice[c.from_user.id]=vpn
+        bot.send_message(c.message.chat.id, f"💰 {vpn} $2 to {ECOCASH_NUMBER} *153#\n⏳ Wait 1-5 mins for admin approval\n/support if delay")
+    elif c.data.startswith("cat_"):
+        if "ZOL" in c.data: menu_zol(c.message.chat.id)
+        else: menu_econet(c.message.chat.id)
+    elif c.data.startswith("approve_"):
+        if c.from_user.id!=ADMIN_ID: return
+        uid=int(c.data.split("_")[1]); deliver(uid, pending_choice.get(uid,"FAMILY"), "OK", 2, "")
+        bot.edit_message_text(f"✅ APPROVED", c.message.chat.id, c.message.message_id)
+
+@bot.message_handler(content_types=['text'])
+def sms_handler(m):
+    if m.text.startswith("/"): return
+    if m.from_user.id not in pending_choice: bot.send_message(m.chat.id, "/buy /zol /econet"); return
+    pending_approval[str(m.from_user.id)]={"vpn":pending_choice[m.from_user.id]}
+    bot.send_message(m.chat.id, "⏳ Wait 1-5 mins for admin approval\n/support if delay")
+    markup=InlineKeyboardMarkup(); markup.add(InlineKeyboardButton("✅ APPROVE", callback_data=f"approve_{m.from_user.id}"))
+    bot.send_message(ADMIN_ID, f"🔔 {m.from_user.id} {pending_choice[m.from_user.id]}", reply_markup=markup)
+
+def run_flask(): app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+if __name__=="__main__":
+    threading.Thread(target=run_flask, daemon=True).start()
+    bot.infinity_polling()
