@@ -4,7 +4,7 @@ from telebot import types
 BOT_TOKEN = "8931751932:AAHtSrFYDfCv5N44M6HL5VtRC1b_zPmAv7s"
 ADMIN_ID = 8579468852
 
-bot = telebot.TeleBot(BOT-TOKEN)
+bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(m):
