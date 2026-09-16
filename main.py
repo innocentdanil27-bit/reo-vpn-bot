@@ -1,37 +1,3 @@
-import os, telebot, time, re, hashlib, json
-from flask import Flask
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import threading
-from datetime import datetime
-
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "8579468852"))
-bot = telebot.TeleBot(BOT_TOKEN)
-app = Flask(__name__)
-
-pending = {}
-blocked = set()
-used_txns = set()
-transactions_log = []
-BACKUP_FILE = "transactions_backup.json"
-
-if os.path.exists(BACKUP_FILE):
-    try:
-        with open(BACKUP_FILE,'r') as f:
-            d=json.load(f)
-            transactions_log=d.get("logs",[])
-            used_txns=set(d.get("used_txns",[]))
-    except: pass
-
-def save_backup():
-    with open(BACKUP_FILE,'w') as f:
-        json.dump({"logs":transactions_log,"used_txns":list(used_txns)},f)
-
-def hash_txn(t): return hashlib.sha256(t.encode()).hexdigest()[:20]
-def get_files():
-    if not os.path.exists("configs"): return []
-    return [f for f in os.listdir("configs") if not f.startswith('.')]
-
 def confirm_payment(text):
     upper=text.upper()
     lower=text.lower()
@@ -46,5 +12,29 @@ def confirm_payment(text):
     txn_id=app_m.group(1)
     if hash_txn(txn_id) in used_txns:
         return False, f"ALREADY USED {txn_id}", None, None, None
-    txn_date_str=datetime.now().strftime('%d/%m/%Y')
-    dm=re.search(r'CI(\d{2})(\d{2})(\d{2})
+    
+    # SECURED: TODAY ONLY - 2026 to 2030 - NO YESTERDAY!
+    today = datetime.now().date()
+    today_str = today.strftime('%d/%m/%Y')
+    txn_date_str = today_str
+    
+    dm=re.search(r'CI(\d{2})(\d{2})(\d{2})', upper)
+    if dm:
+        y,mn,d=dm.groups()  # YY MM DD
+        try:
+            full_year=2000+int(y)
+            # ONLY 2026-2030
+            if full_year < 2026 or full_year > 2030:
+                return False, f"❌ REJECTED {d}/{mn}/{full_year} - Only 2026-2030 allowed", f"{d}/{mn}/{full_year}", txn_id, amount
+            txn_date_str=f"{d}/{mn}/{full_year}"
+            dt=datetime.strptime(txn_date_str, '%d/%m/%Y').date()
+            # TODAY ONLY - NO YESTERDAY!
+            if dt != today:
+                return False, f"❌ OLD DATE {txn_date_str} - Must be TODAY {today_str} ONLY! No yesterday!", txn_date_str, txn_id, amount
+        except Exception as e:
+            return False, f"❌ Invalid Date {txn_date_str}", txn_date_str, txn_id, amount
+    else:
+        # If no CI date, must still be today (we use today as date)
+        pass
+    
+    return True, f"CONFIRMED USD {amount}", txn_date_str, txn_id, amount
