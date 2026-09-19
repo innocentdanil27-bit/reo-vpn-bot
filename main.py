@@ -83,11 +83,6 @@ def h_econet(m):
     if m.from_user.id in blocked: return
     bot.send_message(m.chat.id, "🌐 ECONET $2 Command Received"); econet_menu(m.chat.id)
 
-@bot.message_handler(commands=['eco'])
-def h_eco(m):
-    if m.from_user.id in blocked: return
-    bot.send_message(m.chat.id, "🌐 ECO $2 Command Received"); econet_menu(m.chat.id)
-
 @bot.message_handler(commands=['price'])
 def h_price(m):
     bot.send_message(m.chat.id, f"💰 PRICE LIST {now_cat()}\n💳 {ECOCASH_NUMBER} {ECOCASH_NAME}\n\n📡 ZOL $2: ZOL, HA ZOL, HTTP ZOL, Stark ZOL\n🌐 ECONET $2: EHI, NPV, SocksIP, NetMod, HA Tunnel Plus\n🔥 Family ALL 12 $2 BEST\n\n/buy /zol /econet to order")
@@ -131,7 +126,7 @@ def h_trial(m):
 
 @bot.message_handler(commands=['refer'])
 def h_refer(m):
-    bot.send_message(m.chat.id, "👥 REFER Earn $0.50\nShare https://t.me/reo_products_bot to 5 groups\nSend 5 screenshots showing @reo_products_bot\nThen send YOUR details:\n/mynumber YOUR_ECOCASH_NUMBER\n/myname YOUR_ECOCASH_NAME")
+    bot.send_message(m.chat.id, "👥 REFER Earn $0.50\nShare https://t.me/reo_products_bot to 5 groups\nSend 5 screenshots showing @reo_products_bot\nThen send YOUR details:\n/mynumber YOUR_ECOCASH_NUMBER\n/myname YOUR_ECOCASH_NAME", disable_web_page_preview=True)
 
 @bot.message_handler(commands=['mynumber'])
 def h_mynumber(m):
@@ -278,7 +273,7 @@ def sms(m):
 
 def set_commands():
     try:
-        cmds=[BotCommand("start","Start"),BotCommand("buy","Buy"),BotCommand("zol","ZOL"),BotCommand("econet","ECONET"),BotCommand("eco","ECO"),BotCommand("price","Price"),BotCommand("proof","Proofs"),BotCommand("help","Help"),BotCommand("myvpn","My VPN"),BotCommand("status","Status"),BotCommand("support","Support"),BotCommand("about","About"),BotCommand("trial","Trial"),BotCommand("refer","Refer"),BotCommand("mynumber","Your number"),BotCommand("myname","Your name"),BotCommand("admin","Admin"),BotCommand("pending","Pending")]
+        cmds=[BotCommand("start","Start"),BotCommand("buy","Buy"),BotCommand("zol","ZOL"),BotCommand("econet","ECONET"),BotCommand("price","Price"),BotCommand("proof","Proofs"),BotCommand("help","Help"),BotCommand("myvpn","My VPN"),BotCommand("status","Status"),BotCommand("support","Support"),BotCommand("about","About"),BotCommand("trial","Trial"),BotCommand("refer","Refer"),BotCommand("mynumber","Your number"),BotCommand("myname","Your name"),BotCommand("admin","Admin"),BotCommand("pending","Pending")]
         bot.set_my_commands(cmds)
     except: pass
 
