@@ -4,8 +4,8 @@ from flask import Flask
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 from datetime import datetime, timezone, timedelta
 
-BOT_TOKEN = os.environ.get("8931751932:AAHrky1vnNFVztV-kYipcRFpOo9kO7aABJo")
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "8579468852")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "8579468852"))
 ECOCASH_NUMBER = "0775713879"
 ECOCASH_NAME = "Danil"
 
@@ -126,7 +126,7 @@ def h_trial(m):
 
 @bot.message_handler(commands=['refer'])
 def h_refer(m):
-    bot.send_message(m.chat.id, "👥 REFER Earn $0.50\nShare https://t.me/reo_products_bot to 5 groups\nSend 5 screenshots showing @reo_products_bot\nThen send YOUR details:\n/mynumber YOUR_ECOCASH_NUMBER\n/myname YOUR_ECOCASH_NAME", disable_web_page_preview=True)
+    bot.send_message(m.chat.id, "👥 REFER Earn $0.50\nShare https://t.me/reo_products_bot to 5 groups\nSend 5 screenshots showing @reo_products_bot\nThen send YOUR details:\n/mynumber YOUR_ECOCASH_NUMBER\n/myname YOUR_ECOCASH_NAME")
 
 @bot.message_handler(commands=['mynumber'])
 def h_mynumber(m):
