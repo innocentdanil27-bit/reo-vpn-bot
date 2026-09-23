@@ -4,7 +4,7 @@ from flask import Flask
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 from datetime import datetime, timezone, timedelta
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("8931751932:AAHrky1vnNFVztV-kYipcRFpOo9kO7aABJo")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "8579468852"))
 ECOCASH_NUMBER = "0775713879"
 ECOCASH_NAME = "Danil"
