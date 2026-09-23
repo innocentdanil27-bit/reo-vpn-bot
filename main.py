@@ -4,10 +4,20 @@ from flask import Flask
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 from datetime import datetime, timezone, timedelta
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+# FIX: Support BOTH names - BOT_TOKEN and TELEGRAM_BOT_TOKEN
+BOT_TOKEN = os.environ.get("BOT_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN") or os.environ.get("TOKEN")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "8579468852"))
 ECOCASH_NUMBER = "0775713879"
 ECOCASH_NAME = "Danil"
+
+print(f"=== BOT STARTING ===")
+print(f"Token found: {bool(BOT_TOKEN)}")
+print(f"ADMIN: {ADMIN_ID}")
+
+if not BOT_TOKEN:
+    print("FATAL: No BOT_TOKEN set! Set BOT_TOKEN or TELEGRAM_BOT_TOKEN in Render")
+    # Don't crash Flask, so Render shows Live
+    BOT_TOKEN = "123456:FAKE_TOKEN_FOR_FLASK"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
@@ -47,7 +57,8 @@ def deliver(uid, vpn, txn):
     try:
         bot.send_message(uid, f"✅ {vpn} APPROVED $2\nTxn: {txn}\n💳 {ECOCASH_NUMBER}\nFile sent!")
         sales_log.append({"vpn":vpn,"txn":txn,"date":now_cat()})
-    except: pass
+    except Exception as e:
+        print(f"Deliver error: {e}")
 
 def check_sms(t):
     up=t.upper()
@@ -60,10 +71,12 @@ def check_sms(t):
     return True,"OK",txn
 
 @app.route('/')
-def home(): return f"LIVE {len(pending_approval)} pending {now_cat()}"
+def home():
+    return f"LIVE {len(pending_approval)} pending {now_cat()} ADMIN {ADMIN_ID} TokenOK {bool(BOT_TOKEN and 'FAKE' not in BOT_TOKEN)}"
 
 @bot.message_handler(commands=['start'])
 def h_start(m):
+    print(f"/start from {m.from_user.id}")
     if m.from_user.id in blocked: bot.send_message(m.chat.id,"🚫 Blocked"); return
     bot.send_message(m.chat.id, f"🚀 REO VPN {now_cat()}\n💳 {ECOCASH_NUMBER} {ECOCASH_NAME}\n\n👥 BUYER COMMANDS:\n/start /buy /zol /econet /price /proof /help /myvpn /status /support /about /trial /refer\n\n🛒 Pick /buy")
     main_menu(m.chat.id)
@@ -275,10 +288,31 @@ def set_commands():
     try:
         cmds=[BotCommand("start","Start"),BotCommand("buy","Buy"),BotCommand("zol","ZOL"),BotCommand("econet","ECONET"),BotCommand("price","Price"),BotCommand("proof","Proofs"),BotCommand("help","Help"),BotCommand("myvpn","My VPN"),BotCommand("status","Status"),BotCommand("support","Support"),BotCommand("about","About"),BotCommand("trial","Trial"),BotCommand("refer","Refer"),BotCommand("mynumber","Your number"),BotCommand("myname","Your name"),BotCommand("admin","Admin"),BotCommand("pending","Pending")]
         bot.set_my_commands(cmds)
-    except: pass
+    except Exception as e:
+        print(f"Set commands error: {e}")
 
-def run_flask(): app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+def run_bot():
+    try:
+        me = bot.get_me()
+        print(f"✅ BOT CONNECTED: @{me.username} {me.first_name}")
+        print("Starting polling - Send /start now!")
+        bot.infinity_polling(timeout=30, long_polling_timeout=30)
+    except Exception as e:
+        print(f"Bot polling error: {e}")
+        import traceback; traceback.print_exc()
+
+def run_flask():
+    port=int(os.environ.get("PORT", 10000))
+    print(f"Flask on port {port}")
+    app.run(host='0.0.0.0', port=port)
+
 if __name__=="__main__":
     threading.Thread(target=run_flask, daemon=True).start()
     set_commands()
-    bot.infinity_polling()
+    # Only poll if real token
+    if BOT_TOKEN and "FAKE" not in BOT_TOKEN:
+        run_bot()
+    else:
+        print("No real token - Flask only")
+        while True:
+            import time; time.sleep(3600)
